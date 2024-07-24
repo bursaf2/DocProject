@@ -3,7 +3,7 @@ package com.example.DocProject.Controller;
 import com.example.DocProject.Service.FileStorageService;
 import com.example.DocProject.message.ResponseMessage;
 import com.example.DocProject.model.FileInfo;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -19,12 +19,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 
-
+@AllArgsConstructor
 @Controller
 @CrossOrigin("http://localhost:8081")
 public class FileController {
 
-    @Autowired
+
     FileStorageService storageService;
 
     @PostMapping("/upload")
