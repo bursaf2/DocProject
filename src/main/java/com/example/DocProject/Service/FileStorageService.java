@@ -13,7 +13,7 @@ public interface FileStorageService {
     public Resource load(String filename);
 
     public void deleteAll();
-
+    void deleteFile(String filename);
     public Stream<Path> loadAll();
 
 
