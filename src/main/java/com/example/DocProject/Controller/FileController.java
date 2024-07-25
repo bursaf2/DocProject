@@ -65,4 +65,14 @@ public class FileController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"").body(file);
     }
+    @DeleteMapping("/files/{filename:.+}")
+    public ResponseEntity<String> deleteFile(@PathVariable String filename) {
+        try {
+            storageService.deleteFile(filename);
+            return ResponseEntity.ok("File deleted successfully: " + filename);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error deleting file: " + e.getMessage());
+        }
+    }
 }
