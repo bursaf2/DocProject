@@ -20,17 +20,11 @@ public class DocProjectApplication implements CommandLineRunner {
 	public static void main(String[] args) {
 		SpringApplication.run(DocProjectApplication.class, args);
 
-
 		SyncfusionLicenseProvider.registerLicense("GTIlMmhhZX1ifWBmaGFifGNrfGFjYWdzY2tpYGZpZ2VoKjo/PjIpNiE3Nj4TOzIwNicnNiM2fTY3Jn0nIQ==");
-
 	}
 	@Override
 	public void run(String... arg) throws Exception {
 		storageService.deleteAll();
 		storageService.init();
-
-
-
-
 	}
 }
