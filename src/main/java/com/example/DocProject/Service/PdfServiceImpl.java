@@ -4,9 +4,10 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
-import org.springframework.web.bind.annotation.RequestParam;
-
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -102,4 +103,21 @@ public class PdfServiceImpl implements PdfService {
             throw new RuntimeException("Could not read file", e);
         }
     }
+    @Override
+    public void convertPdfToImages(String fileName) throws IOException {
+        String pdfFilePath = "uploads/" + fileName + ".pdf";
+        File pdfFile = new File(pdfFilePath);
+        PDDocument document = PDDocument.load(pdfFile);
+        PDFRenderer pdfRenderer = new PDFRenderer(document);
+
+        for (int pageIndex = 0; pageIndex < document.getNumberOfPages(); pageIndex++) {
+            BufferedImage image = pdfRenderer.renderImageWithDPI(pageIndex, 300);
+            File outputFile = new File(fileName + ".png");
+            ImageIO.write(image, "PNG", outputFile);
+            System.out.println("Saved: " + outputFile.getAbsolutePath());
+        }
+
+        document.close();
+    }
+
 }

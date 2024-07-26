@@ -1,11 +1,13 @@
 package com.example.DocProject.Service;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface PdfService {
-    public void createPdf(String filePath);
-    public void modifyPdf(String filePath,String outputFilePath);
-    public void extractTextFromPdf(String filePath,String textFilePath);
-    public List<String> getAllFiles();
-    public byte[]getFileByName(String filename);
+     void createPdf(String filePath);
+     void modifyPdf(String filePath,String outputFilePath);
+     void extractTextFromPdf(String filePath,String textFilePath);
+     List<String> getAllFiles();
+     byte[]getFileByName(String filename);
+     void convertPdfToImages(String pdfFilePath) throws IOException;
 }

@@ -18,9 +18,9 @@ public class WordServiceImpl implements WordService {
     private final Path root = Paths.get("uploads");
 
     @Override
-    public void createWordDocument(String content, String filename) {
+    public void createWordDocument(String content, String fileName) {
         try (XWPFDocument document = new XWPFDocument();
-             FileOutputStream out = new FileOutputStream(root.resolve(filename).toFile())) {
+             FileOutputStream out = new FileOutputStream(root.resolve(fileName).toFile())) {
             XWPFParagraph paragraph = document.createParagraph();
             XWPFRun run = paragraph.createRun();
             run.setText(content);
