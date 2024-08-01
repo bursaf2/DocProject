@@ -1,8 +1,7 @@
 package com.example.DocProject.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.apache.poi.xwpf.usermodel.*;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -33,32 +32,56 @@ public class DocumentService {
     private void replacePlaceholders(XWPFDocument document, JsonNode jsonData) {
         Map<String, String> flatJsonData = flattenJson(jsonData, "");
 
-        document.getParagraphs().forEach(paragraph -> {
-            String text = paragraph.getText();
+        // Iterate over all document elements
+        for (IBodyElement element : document.getBodyElements()) {
+            if (element instanceof XWPFParagraph) {
+                XWPFParagraph paragraph = (XWPFParagraph) element;
+                replaceJsonDataToWord(flatJsonData, paragraph);
+            } else if (element instanceof XWPFTable) {
+                XWPFTable table = (XWPFTable) element;
+                System.out.println("Table:");
+                for (XWPFTableRow row : table.getRows()) {
+                    System.out.println("  Row:");
+                    for (XWPFTableCell cell : row.getTableCells()) {
+                        System.out.println("    Cell:");
+                        for (XWPFParagraph paragraph : cell.getParagraphs()) {
+                            String paragraphText = paragraph.getText();
+                            System.out.println("      Paragraph: " + paragraphText);
+                            replaceJsonDataToWord(flatJsonData, paragraph);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void replaceJsonDataToWord(Map<String, String> flatJsonData, XWPFParagraph paragraph) {
+        List<XWPFRun> runs = paragraph.getRuns();
+        if (runs != null && !runs.isEmpty()) {
+            StringBuilder paragraphText = new StringBuilder();
+            for (XWPFRun run : runs) {
+                paragraphText.append(run.getText(0));
+            }
+
+            String text = paragraphText.toString();
             for (Map.Entry<String, String> entry : flatJsonData.entrySet()) {
                 String placeholder = "{{" + entry.getKey() + "}}";
                 if (text.contains(placeholder)) {
                     text = text.replace(placeholder, entry.getValue());
                 }
             }
-            String finalText = text;
-            // Check if the paragraph has any runs
-            List<XWPFRun> runs = new ArrayList<>(paragraph.getRuns());
-            if (!runs.isEmpty()) {
-                // Clear all runs
-                for (XWPFRun run : runs) {
-                    paragraph.removeRun(paragraph.getRuns().indexOf(run));
-                }
+            replacePlaceholderRuns(paragraph, text);
+        }
+    }
 
-                // Add the new run with the updated text
-                XWPFRun newRun = paragraph.createRun();
-                newRun.setText(finalText);
-            } else {
-                // If no runs exist, simply create a new run with the text
-                XWPFRun newRun = paragraph.createRun();
-                newRun.setText(finalText);
-            }
-        });
+    private void replacePlaceholderRuns(XWPFParagraph paragraph, String finalText) {
+        List<XWPFRun> runs = new ArrayList<>(paragraph.getRuns());
+        for (XWPFRun run : runs) {
+            paragraph.removeRun(paragraph.getRuns().indexOf(run));
+        }
+
+        XWPFRun newRun = paragraph.createRun();
+        newRun.setText(finalText, 0);
     }
 
     private Map<String, String> flattenJson(JsonNode jsonNode, String prefix) {
@@ -71,12 +94,13 @@ public class DocumentService {
         } else if (jsonNode.isValueNode()) {
             flatMap.put(prefix, jsonNode.asText());
         }
+        for (Map.Entry<String, String> entry : flatMap.entrySet()) {
+            System.out.println("Key: " + entry.getKey() + ", Value: " + entry.getValue());
+        }
         return flatMap;
     }
 
-
     private void convertToPdf(File docxFile, File pdfFile) throws IOException {
-        // LibreOffice veya üçüncü parti kütüphaneleri kullanarak PDF'e dönüştürme
         String command = String.format("libreoffice --headless --convert-to pdf --outdir %s %s",
                 pdfFile.getParent(), docxFile.getAbsolutePath());
         Process process = Runtime.getRuntime().exec(command);

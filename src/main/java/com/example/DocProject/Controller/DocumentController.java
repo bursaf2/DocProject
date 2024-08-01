@@ -20,13 +20,10 @@ public class DocumentController {
             @RequestParam("outputName") String outputName,
             @RequestBody JsonNode jsonData) throws IOException {
 
-        // Şablon dosyasının yolu
-        File templateFile = new File("uploads/" + templateName);
+        File templateFile = new File("uploads/" + templateName); // it holds to word file path
 
-        // PDF dosyasının yolu
-        File outputFile = new File("uploads/" + outputName + ".pdf");
+        File outputFile = new File("uploads/" + outputName + ".pdf");   // it holds to new pdf name and path
 
-        // Word şablonunu JSON verileriyle doldur ve PDF'e dönüştür
         documentService.processWordTemplate(templateFile, jsonData, outputFile);
 
         return "PDF oluşturuldu: " + outputFile.getAbsolutePath();
