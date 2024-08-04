@@ -20,7 +20,7 @@ public class DocumentController {
             @RequestParam("outputName") String outputName,
             @RequestBody JsonNode jsonData) throws IOException {
 
-        File templateFile = new File("uploads/" + templateName); // it holds to word file path
+        File templateFile = new File("uploads/" + templateName +".docx"); // it holds to word file path
 
         File outputFile = new File("uploads/" + outputName + ".pdf");   // it holds to new pdf name and path
 
