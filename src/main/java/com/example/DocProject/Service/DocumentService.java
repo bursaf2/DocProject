@@ -1,5 +1,4 @@
 package com.example.DocProject.Service;
-
 import com.example.DocProject.model.KeyValuePair;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.poi.xwpf.usermodel.*;
@@ -41,6 +40,7 @@ public class DocumentService {
             }
         }
     }
+
     private void replaceJsonDataParagraph(List<KeyValuePair> flatJsonData, XWPFParagraph paragraph) {
         List<XWPFRun> runs = paragraph.getRuns();
         if (runs != null && !runs.isEmpty()) {
@@ -60,7 +60,39 @@ public class DocumentService {
                     text = text.replace(placeholder, pair.getValue());
                 }
             }
-            replacePlaceholderRuns(paragraph, text);
+
+            // Preserve existing runs and replace text
+            preserveRuns(paragraph, text);
+        }
+    }
+
+    private void preserveRuns(XWPFParagraph paragraph, String finalText) {
+        List<XWPFRun> runs = paragraph.getRuns();
+        int runIndex = 0;
+        int textIndex = 0;
+
+        while (runIndex < runs.size() && textIndex < finalText.length()) {
+            XWPFRun run = runs.get(runIndex);
+            String runText = run.getText(0);
+            if (runText != null) {
+                int runLength = runText.length();
+                if (textIndex + runLength <= finalText.length()) {
+                    run.setText(finalText.substring(textIndex, textIndex + runLength), 0);
+                } else {
+                    run.setText(finalText.substring(textIndex), 0);
+                }
+                textIndex += runLength;
+            }
+            runIndex++;
+        }
+
+        while (runIndex < runs.size()) {
+            paragraph.removeRun(runIndex);
+        }
+
+        if (textIndex < finalText.length()) {
+            XWPFRun run = paragraph.createRun();
+            run.setText(finalText.substring(textIndex), 0);
         }
     }
 
@@ -76,7 +108,6 @@ public class DocumentService {
                         if (text.contains(placeholder)) {
                             if (pair.getType().equals("ARRAY")) {
                                 numberOfRows = pair.getArraySize() - 1; // because we have one row
-                                System.out.println("Row adder array size " + numberOfRows);
                                 break outerLoop; // it finds array key and break all loop
                             }
                         }
@@ -126,20 +157,11 @@ public class DocumentService {
                             }
                         }
 
-                        replacePlaceholderRuns(paragraph, text);
+                        preserveRuns(paragraph, text);
                     }
                 }
             }
         }
-    }
-
-    private void replacePlaceholderRuns(XWPFParagraph paragraph, String finalText) {
-        List<XWPFRun> runs = new ArrayList<>(paragraph.getRuns());
-        for (XWPFRun run : runs) {
-            paragraph.removeRun(paragraph.getRuns().indexOf(run));
-        }
-        XWPFRun newRun = paragraph.createRun();
-        newRun.setText(finalText, 0);
     }
 
     private List<KeyValuePair> flattenJson(JsonNode jsonNode, String prefix) {
@@ -189,6 +211,7 @@ public class DocumentService {
         // Evaluate the rest of the expression
         return evaluateSimpleExpression(expression, flatJsonData);
     }
+
     private String replaceExpressions(String text, List<KeyValuePair> flatJsonData) {
         Pattern exprPattern = Pattern.compile("\\{\\{expr\\((.*?)\\)\\}\\}");
         Matcher matcher = exprPattern.matcher(text);
@@ -199,7 +222,6 @@ public class DocumentService {
         }
         return text;
     }
-
 
     private String evaluateSimpleExpression(String expression, List<KeyValuePair> flatJsonData) {
         // Replace variables in the expression with their values from flatJsonData
@@ -238,3 +260,4 @@ public class DocumentService {
         }
     }
 }
+
