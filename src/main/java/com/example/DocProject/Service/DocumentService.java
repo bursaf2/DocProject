@@ -1,6 +1,7 @@
 package com.example.DocProject.Service;
 import com.example.DocProject.model.KeyValuePair;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
 import org.apache.poi.xwpf.usermodel.*;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,7 @@ public class DocumentService {
         XWPFDocument document = new XWPFDocument(templateFile.toURI().toURL().openStream());
 
         replacePlaceholders(document, jsonData);
+        replacePlaceholdersInHeadersAndFooters(document, jsonData);
 
         File filledDocxFile = new File("uploads/filled_template.docx");
         try (FileOutputStream out = new FileOutputStream(filledDocxFile)) {
@@ -27,6 +29,36 @@ public class DocumentService {
         // add this method and some fix some problems
         //convertToPdf(filledDocxFile, outputFile);
     }
+    private void replacePlaceholdersInHeadersAndFooters(XWPFDocument document, JsonNode jsonData) {
+        List<KeyValuePair> flatJsonData = flattenJson(jsonData, "");
+
+        // Accessing headers and footers via XWPFDocument
+        XWPFHeaderFooterPolicy headerFooterPolicy = document.getHeaderFooterPolicy();
+
+        if (headerFooterPolicy != null) {
+            // Replace placeholders in headers
+            replaceTextInHeaderOrFooter(headerFooterPolicy.getHeader(XWPFHeaderFooterPolicy.DEFAULT), flatJsonData);
+
+
+            // Replace placeholders in footers
+            replaceTextInHeaderOrFooter(headerFooterPolicy.getFooter(XWPFHeaderFooterPolicy.DEFAULT), flatJsonData);
+        }
+    }
+
+    private void replaceTextInHeaderOrFooter(XWPFHeaderFooter headerFooter, List<KeyValuePair> flatJsonData) {
+        if (headerFooter != null) {
+            // Replace placeholders in paragraphs
+            for (XWPFParagraph paragraph : headerFooter.getParagraphs()) {
+                replaceJsonDataParagraph(flatJsonData, paragraph);
+            }
+            // Replace placeholders in tables
+            for (XWPFTable table : headerFooter.getTables()) {
+                replaceJsonDataTable(flatJsonData, table);
+            }
+        }
+    }
+
+
 
     private void replacePlaceholders(XWPFDocument document, JsonNode jsonData) {
         List<KeyValuePair> flatJsonData = flattenJson(jsonData, "");
@@ -50,12 +82,15 @@ public class DocumentService {
             }
             String text = paragraphText.toString();
 
+            // Remove backticks from the text for easier matching
+            text = text.replace("`", "");
+
             // Replace expressions in the text
             text = replaceExpressions(text, flatJsonData);
 
             // Replace placeholders in the text
             for (KeyValuePair pair : flatJsonData) {
-                String placeholder = "{{" + pair.getKey() + "}}";
+                String placeholder = "{{" + pair.getKey().replace("`", "") + "}}";
                 if (text.contains(placeholder)) {
                     text = text.replace(placeholder, pair.getValue());
                 }
@@ -65,6 +100,7 @@ public class DocumentService {
             preserveRuns(paragraph, text);
         }
     }
+
 
     private void preserveRuns(XWPFParagraph paragraph, String finalText) {
         List<XWPFRun> runs = paragraph.getRuns();
