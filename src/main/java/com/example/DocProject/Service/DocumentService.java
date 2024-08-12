@@ -19,10 +19,11 @@ public class DocumentService {
     public void processWordTemplate(File templateFile, JsonNode jsonData, File outputFile) throws IOException {
         XWPFDocument document = new XWPFDocument(templateFile.toURI().toURL().openStream());
 
+        String filledFileName = templateFile.getName();
         replacePlaceholders(document, jsonData);
         replacePlaceholdersInHeadersAndFooters(document, jsonData);
 
-        File filledDocxFile = new File("uploads/filled_template.docx");
+        File filledDocxFile = new File("uploads/"+ filledFileName + "_filled.docx");
         try (FileOutputStream out = new FileOutputStream(filledDocxFile)) {
             document.write(out);
         }
@@ -57,8 +58,6 @@ public class DocumentService {
             }
         }
     }
-
-
 
     private void replacePlaceholders(XWPFDocument document, JsonNode jsonData) {
         List<KeyValuePair> flatJsonData = flattenJson(jsonData, "");
