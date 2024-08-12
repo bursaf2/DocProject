@@ -1,7 +1,7 @@
 package com.example.DocProject.Controller;
 
 import com.example.DocProject.Service.WordService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.DocProject.Service.WordServiceImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,8 +12,7 @@ import java.util.List;
 @RequestMapping("/api/word")
 public class WordController {
 
-    @Autowired
-    private WordService wordService;
+    WordService wordService = new WordServiceImpl();
 
     @PostMapping("/create")
     public ResponseEntity<String> createWord(@RequestParam String content, @RequestParam String fileName) {
