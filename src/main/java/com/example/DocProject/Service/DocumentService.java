@@ -109,8 +109,6 @@ public class DocumentService {
             preserveRuns(paragraph, text);
         }
     }
-
-
     private void preserveRuns(XWPFParagraph paragraph, String finalText) {
         List<XWPFRun> runs = paragraph.getRuns();
         int runIndex = 0;
