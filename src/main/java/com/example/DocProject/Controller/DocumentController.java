@@ -10,23 +10,20 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/documents")
 public class DocumentController {
-
     @Autowired
     private DocumentService documentService;
+
 
     @PostMapping("/generatePdf")
     public String generatePdf(
             @RequestParam("templateName") String templateName,
-            @RequestParam("outputName") String outputName,
             @RequestBody JsonNode jsonData) throws IOException {
 
         File templateFile = new File("uploads/" + templateName +".docx"); // it holds to word file path
 
-        File outputFile = new File("uploads/" + outputName + ".pdf");   // it holds to new pdf name and path
+        documentService.processWordTemplate(templateFile, jsonData);
 
-        documentService.processWordTemplate(templateFile, jsonData, outputFile);
-
-        return "PDF oluşturuldu: " + outputFile.getAbsolutePath();
+        return "Word filled with name : " + templateName + "_filled.docx";
 
     }
 }

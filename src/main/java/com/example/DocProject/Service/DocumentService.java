@@ -16,19 +16,29 @@ import java.util.regex.Pattern;
 @Service
 public class DocumentService {
 
-    public void processWordTemplate(File templateFile, JsonNode jsonData, File outputFile) throws IOException {
+    ConversionWordPdfService conversionwordpdfservice = new ConversionWordPdfServiceImpl();
+
+    public void processWordTemplate(File templateFile, JsonNode jsonData) throws IOException {
         XWPFDocument document = new XWPFDocument(templateFile.toURI().toURL().openStream());
 
-        String filledFileName = templateFile.getName();
         replacePlaceholders(document, jsonData);
         replacePlaceholdersInHeadersAndFooters(document, jsonData);
+
+        String fullFileName = templateFile.getName();
+        int dotIndex = fullFileName.lastIndexOf(".");
+        String filledFileName = (dotIndex == -1) ? fullFileName : fullFileName.substring(0, dotIndex);
 
         File filledDocxFile = new File("uploads/"+ filledFileName + "_filled.docx");
         try (FileOutputStream out = new FileOutputStream(filledDocxFile)) {
             document.write(out);
         }
-        // add this method and some fix some problems
-        //convertToPdf(filledDocxFile, outputFile);
+        String filledWordFileName = "uploads/"+ filledFileName + "_filled.docx";
+        String outputPdfFileName = "uploads/" +filledFileName + "_filled.pdf";
+        try {
+            conversionwordpdfservice.convertWordToPdf(filledWordFileName,outputPdfFileName);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
     private void replacePlaceholdersInHeadersAndFooters(XWPFDocument document, JsonNode jsonData) {
         List<KeyValuePair> flatJsonData = flattenJson(jsonData, "");
@@ -281,18 +291,6 @@ public class DocumentService {
         // A simple evaluation method for mathematical expressions
         // You can enhance this to handle more complex expressions or use a library
         return new javax.script.ScriptEngineManager().getEngineByName("JavaScript").eval(expression);
-    }
-
-    private void convertToPdf(File docxFile, File pdfFile) throws IOException {
-        String command = String.format("libreoffice --headless --convert-to pdf --outdir %s %s",
-                pdfFile.getParent(), docxFile.getAbsolutePath());
-        Process process = Runtime.getRuntime().exec(command);
-
-        try {
-            process.waitFor();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 }
 

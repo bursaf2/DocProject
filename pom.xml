@@ -29,13 +29,6 @@
 	<properties>
 		<java.version>21</java.version>
 	</properties>
-	<repositories>
-		<repository>
-			<id>Syncfusion-Java</id>
-			<name>Syncfusion Java repo</name>
-			<url>https://jars.syncfusion.com/repository/maven-public/</url>
-		</repository>
-	</repositories>
 
 	<dependencies>
 		<dependency>
