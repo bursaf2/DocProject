@@ -10,4 +10,5 @@ public interface PdfService {
      List<String> getAllFiles();
      byte[]getFileByName(String filename);
      void convertPdfToImages(String pdfFilePath) throws IOException;
+     void addSignature(String pdfFilename, String imageFilename) throws IOException;
 }

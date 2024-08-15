@@ -65,4 +65,21 @@ public class PdfController {
             return ResponseEntity.status(500).body("Failed to convert PDF to images: " + e.getMessage());
         }
     }
+
+
+    @PostMapping("/add-signature")
+    public ResponseEntity<String> addSignature(@RequestParam("pdfFilename") String pdfFilename,
+                                               @RequestParam("imageFilename") String imageFilename) {
+        try {
+            // PDF'ye imza ekle
+            pdfService.addSignature(pdfFilename, imageFilename);
+
+            return new ResponseEntity<>("Signature added successfully. Output file: signed_" + pdfFilename, HttpStatus.OK);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new ResponseEntity<>("Error adding signature: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
 }

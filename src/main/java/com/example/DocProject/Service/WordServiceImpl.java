@@ -1,7 +1,10 @@
 package com.example.DocProject.Service;
 
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.util.Units;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFPictureData;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.springframework.stereotype.Service;
 
@@ -72,6 +75,60 @@ public class WordServiceImpl implements WordService {
                     .collect(Collectors.toList());
         } catch (IOException e) {
             throw new RuntimeException("Could not list files", e);
+        }
+    }
+
+
+    @Override
+    public void addSignature(String documentName, String signatureImageName, String info) throws IOException {
+        Path documentPath = root.resolve(documentName);
+        Path imagePath = root.resolve(signatureImageName);
+
+        // Word dosyasını aç
+        try (XWPFDocument document = new XWPFDocument(new FileInputStream(documentPath.toFile()))) {
+
+            // Metni ekle
+            XWPFParagraph textParagraph = document.createParagraph();
+            XWPFRun textRun = textParagraph.createRun();
+
+            // "SIGNATURE" ve info metnini yeni satırlara ayırarak ekleyin
+
+            textRun.addBreak();
+            textRun.addBreak();
+            textRun.setBold(true);
+            textRun.setText("SIGNATURE");
+            textRun.addBreak();
+            textRun.addBreak();
+
+            // Gelen info metnini satırlara ayırarak ekleyin
+            String[] lines = info.split("_");
+            for (int i = 0; i < lines.length; i++) {
+                if (i > 0) {
+                    textRun.addBreak(); // Yeni satır ekle
+                }
+                textRun.setBold(true);
+                textRun.setText(lines[i]);
+            }
+
+            textRun.setBold(true);
+            textRun.setFontSize(12);
+
+
+            // İmza resmini ekle
+            byte[] imageBytes = Files.readAllBytes(imagePath);
+            //String pictureIndex = document.addPictureData(imageBytes, XWPFDocument.PICTURE_TYPE_PNG);
+
+            // Resmi ekle
+            XWPFParagraph paragraph = document.createParagraph();
+            XWPFRun run = paragraph.createRun();
+            run.addPicture(new ByteArrayInputStream(imageBytes), XWPFDocument.PICTURE_TYPE_PNG, signatureImageName, Units.toEMU(200), Units.toEMU(50));
+
+            // Dosyayı kaydet
+            try (FileOutputStream out = new FileOutputStream(documentPath.toFile())) {
+                document.write(out);
+            }
+        } catch (InvalidFormatException e) {
+            throw new RuntimeException(e);
         }
     }
 

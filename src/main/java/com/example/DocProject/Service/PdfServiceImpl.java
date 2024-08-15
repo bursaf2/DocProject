@@ -4,6 +4,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.stereotype.Service;
@@ -121,6 +122,51 @@ public class PdfServiceImpl implements PdfService {
         }
 
         document.close();
+    }
+
+
+
+
+    @Override
+    public void addSignature(String pdfFilename, String imageFilename) throws IOException {
+        Path pdfPath = root.resolve(pdfFilename);
+        Path imagePath = root.resolve(imageFilename);
+        Path outputPath = root.resolve("signed_" + pdfFilename);
+
+        try (PDDocument document = PDDocument.load(pdfPath.toFile())) {
+            PDPage page = document.getPage(document.getNumberOfPages() - 1);
+            PDImageXObject pdImage = PDImageXObject.createFromFile(String.valueOf(imagePath.toFile()), document);
+
+            // Sayfadaki mevcut metni ve boş alanları analiz et
+            PDFTextStripper textStripper = new PDFTextStripper();
+            String pageText = textStripper.getText(document);
+
+            // Sayfanın boyutlarını al
+            float pageWidth = page.getMediaBox().getWidth();
+            float pageHeight = page.getMediaBox().getHeight();
+
+            // İmza fotoğrafının boyutlarını ayarla
+            float imageWidth = 150;
+            float imageHeight = 50;
+
+            // İmzayı uygun bir boşluğa yerleştirme mantığı
+            // Bu örnekte, sayfanın alt kısmında boş bir alan arıyoruz
+            float x = (pageWidth - imageWidth) / 2; // Ortalanmış konum
+            float y = 50; // Sayfanın alt kısmında
+            boolean hasTextBelow = pageText.contains("some text pattern"); // İmzanın yerleştirilmesini engelleyen metinlerin kontrolü
+
+            if (hasTextBelow) {
+                // Eğer metin varsa, imzayı yerleştirmek için uygun boş alanı bul
+                // Bu örnekte, boş alana imzayı yerleştirme mantığını basit tutuyoruz
+                y = pageHeight - imageHeight - 50; // Sayfanın alt kısmında boş yer bırakma
+            }
+
+            try (PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true)) {
+                contentStream.drawImage(pdImage, x, y, imageWidth, imageHeight);
+            }
+
+            document.save(outputPath.toFile());
+        }
     }
 
 }
