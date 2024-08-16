@@ -1,30 +1,63 @@
 package com.example.DocProject.Service;
 
+
+import com.itextpdf.signatures.*;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.Security;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.stream.Collectors;
+
+
+
+
+
+import com.itextpdf.kernel.pdf.PdfReader;
+import com.itextpdf.kernel.pdf.StampingProperties;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.springframework.stereotype.Service;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.Security;
+import java.security.cert.Certificate;
+
+
 
 @Service
 public class PdfServiceImpl implements PdfService {
 
     private final Path root = Paths.get("uploads");
 
+    /*
+    private static final String KEYSTORE = "C:\\Users\\mehmet.erdem\\Desktop\\DocProject\\yilmaz-keystore.p12";
+    private static final char[] PASSWORD = "123123".toCharArray();
+*/
     @Override
     public void createPdf(String pdfName) {
         Path filePath = root.resolve(pdfName);
@@ -166,6 +199,93 @@ public class PdfServiceImpl implements PdfService {
             }
 
             document.save(outputPath.toFile());
+        }
+    }
+
+    @Override
+    public void signPdf(String sourceFileName, String signedFileName, String keystoreName, String password) throws Exception {
+        BouncyCastleProvider provider = new BouncyCastleProvider();
+        Security.addProvider(provider);
+
+
+        Path keystorePath = root.resolve(keystoreName);
+
+
+
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        ks.load(new FileInputStream(keystorePath.toFile()), password.toCharArray());
+        String alias = (String) ks.aliases().nextElement();
+        PrivateKey pk = (PrivateKey) ks.getKey(alias, password.toCharArray());
+        Certificate[] chain = ks.getCertificateChain(alias);
+
+        Path srcPath = root.resolve(sourceFileName);
+        Path destPath = root.resolve(signedFileName);
+
+        try (PdfReader reader = new PdfReader(srcPath.toString());
+             FileOutputStream fos = new FileOutputStream(destPath.toFile())) {
+
+            PdfSigner signer = new PdfSigner(reader, fos, new StampingProperties());
+            IExternalSignature pks = new PrivateKeySignature(pk, DigestAlgorithms.SHA256, provider.getName());
+            IExternalDigest digest = new BouncyCastleDigest();
+            ICrlClient crlClient = null;
+
+            PdfSignatureAppearance appearance = signer.getSignatureAppearance();
+            appearance.setReason("Digital signature example");
+            appearance.setLocation("Location");
+            appearance.setContact("Contact");
+            appearance.setSignatureCreator("Creator");
+            signer.setFieldName("Signature");
+            signer.signDetached(digest, pks, chain, null, null, (ITSAClient) crlClient, 0, PdfSigner.CryptoStandard.CMS);
+        }
+    }
+
+    @Override
+    public void createKeyStore(String keyStoreName, String keyStorePassword, String keyAlias, String keyPassword,
+                               String firstNameLastName, String organizationalUnit, String organization,
+                               String city, String state, String country) throws IOException, InterruptedException {
+
+
+        Path keyStorePath = root.resolve(keyStoreName);
+
+
+        List<String> commands = new ArrayList<>();
+        commands.add("keytool");
+        commands.add("-genkeypair");
+        commands.add("-alias");
+        commands.add(keyAlias);
+        commands.add("-keyalg");
+        commands.add("RSA");
+        commands.add("-keysize");
+        commands.add("2048");
+        commands.add("-validity");
+        commands.add("365");
+        commands.add("-keystore");
+        commands.add(keyStorePath.toString());
+        commands.add("-storepass");
+        commands.add(keyStorePassword);
+        commands.add("-keypass");
+        commands.add(keyPassword);
+
+        ProcessBuilder processBuilder = new ProcessBuilder(commands);
+        Process process = processBuilder.start();
+
+        // Provide the answers to the keytool questions
+        try (OutputStream os = process.getOutputStream()) {
+            os.write((firstNameLastName + "\n").getBytes());
+            os.write((organizationalUnit + "\n").getBytes());
+            os.write((organization + "\n").getBytes());
+            os.write((city + "\n").getBytes());
+            os.write((state + "\n").getBytes());
+            os.write((country + "\n").getBytes());
+            os.write(("y\n").getBytes()); // Answer 'yes' to the confirmation
+            os.flush();
+        }
+
+        int exitCode = process.waitFor();
+        if (exitCode == 0) {
+            System.out.println("Keystore created successfully.");
+        } else {
+            System.err.println("Failed to create keystore.");
         }
     }
 
