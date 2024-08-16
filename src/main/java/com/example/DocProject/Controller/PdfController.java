@@ -2,10 +2,13 @@ package com.example.DocProject.Controller;
 
 import com.example.DocProject.Service.PdfService;
 import com.example.DocProject.Service.PdfServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -80,6 +83,44 @@ public class PdfController {
             return new ResponseEntity<>("Error adding signature: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+
+    @PostMapping("/sign")
+    public String signPdf(@RequestParam String sourceFileName, @RequestParam String signedFileName, @RequestParam String keystoreName, String password ) {
+        try {
+            pdfService.signPdf(sourceFileName, signedFileName, keystoreName, password);
+            return "PDF signed successfully!";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error signing PDF: " + e.getMessage();
+        }
+    }
+
+
+
+    @PostMapping("/createKeystore")
+    public String createKeyStore(
+            @RequestParam String keyStoreName,
+            @RequestParam String keyStorePassword,
+            @RequestParam String keyAlias,
+            @RequestParam String keyPassword,
+            @RequestParam String firstNameLastName,
+            @RequestParam String organizationalUnit,
+            @RequestParam String organization,
+            @RequestParam String city,
+            @RequestParam String state,
+            @RequestParam String country) {
+        try {
+            pdfService.createKeyStore(keyStoreName, keyStorePassword, keyAlias, keyPassword,
+                    firstNameLastName, organizationalUnit, organization,
+                    city, state, country);
+            return "Keystore created successfully.";
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            return "Failed to create keystore.";
+        }
+    }
+
 
 
 }
