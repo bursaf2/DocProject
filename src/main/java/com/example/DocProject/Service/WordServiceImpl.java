@@ -84,14 +84,14 @@ public class WordServiceImpl implements WordService {
         Path documentPath = root.resolve(documentName);
         Path imagePath = root.resolve(signatureImageName);
 
-        // Word dosyasını aç
+
         try (XWPFDocument document = new XWPFDocument(new FileInputStream(documentPath.toFile()))) {
 
-            // Metni ekle
+
             XWPFParagraph textParagraph = document.createParagraph();
             XWPFRun textRun = textParagraph.createRun();
 
-            // "SIGNATURE" ve info metnini yeni satırlara ayırarak ekleyin
+
 
             textRun.addBreak();
             textRun.addBreak();
@@ -100,11 +100,11 @@ public class WordServiceImpl implements WordService {
             textRun.addBreak();
             textRun.addBreak();
 
-            // Gelen info metnini satırlara ayırarak ekleyin
+
             String[] lines = info.split("_");
             for (int i = 0; i < lines.length; i++) {
                 if (i > 0) {
-                    textRun.addBreak(); // Yeni satır ekle
+                    textRun.addBreak();
                 }
                 textRun.setBold(true);
                 textRun.setText(lines[i]);
@@ -114,16 +114,16 @@ public class WordServiceImpl implements WordService {
             textRun.setFontSize(12);
 
 
-            // İmza resmini ekle
-            byte[] imageBytes = Files.readAllBytes(imagePath);
-            //String pictureIndex = document.addPictureData(imageBytes, XWPFDocument.PICTURE_TYPE_PNG);
 
-            // Resmi ekle
+            byte[] imageBytes = Files.readAllBytes(imagePath);
+
+
+
             XWPFParagraph paragraph = document.createParagraph();
             XWPFRun run = paragraph.createRun();
             run.addPicture(new ByteArrayInputStream(imageBytes), XWPFDocument.PICTURE_TYPE_PNG, signatureImageName, Units.toEMU(200), Units.toEMU(50));
 
-            // Dosyayı kaydet
+
             try (FileOutputStream out = new FileOutputStream(documentPath.toFile())) {
                 document.write(out);
             }
