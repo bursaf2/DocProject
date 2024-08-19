@@ -21,11 +21,11 @@ public class DocumentController {
             @RequestParam("templateName") String templateName,
             @RequestBody JsonNode jsonData) throws IOException {
 
-        File templateFile = new File("uploads/" + templateName +".docx"); // it holds to word file path
+        File templateFile = new File("uploads/" + templateName ); // it holds to word file path
 
         documentService.processWordTemplate(templateFile, jsonData);
 
-        return "Word filled with name : " + templateName + "_filled.docx";
+        return "Word filled with name : " + templateName ;
 
     }
 }

@@ -20,7 +20,7 @@ public class PdfController {
 
     @PostMapping("/create")
     public ResponseEntity<String> createPdf(@RequestParam String fileName) {
-        pdfService.createPdf(fileName + ".pdf");
+        pdfService.createPdf(fileName);
         return ResponseEntity.ok("PDF created successfully at " + fileName);
     }
 
@@ -28,7 +28,7 @@ public class PdfController {
     public ResponseEntity<String> modifyPdf(@RequestParam String fileName, @RequestParam String newFileName) {
 
         try {
-            pdfService.modifyPdf(fileName + ".pdf", newFileName + ".pdf");
+            pdfService.modifyPdf(fileName + ".pdf", newFileName);
             return ResponseEntity.ok("PDF modified successfully and saved to " + newFileName);
         } catch (RuntimeException e) {
             return ResponseEntity.status(500).body("Failed to modify PDF: " + e.getMessage());
@@ -38,12 +38,13 @@ public class PdfController {
     @PostMapping("/extractText")
     public ResponseEntity<String> extractTextFromPdf(@RequestParam String pdfFileName, @RequestParam String txtFileName) {
         try {
-            pdfService.extractTextFromPdf(pdfFileName + ".pdf", txtFileName + ".txt");
+            pdfService.extractTextFromPdf(pdfFileName, txtFileName);
             return ResponseEntity.ok("Text extracted successfully to " + txtFileName);
         } catch (RuntimeException e) {
             return ResponseEntity.status(500).body("Failed to extract text from PDF: " + e.getMessage());
         }
     }
+
     @GetMapping("/files")
     public ResponseEntity<List<String>> getAllFiles() {
         List<String> fileNames = pdfService.getAllFiles();
@@ -57,7 +58,6 @@ public class PdfController {
                 .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
                 .body(fileContent);
     }
-
 
     @PostMapping("/pdf-to-image")
     public ResponseEntity<String> convertPdfToImages(@RequestParam String fileName) {

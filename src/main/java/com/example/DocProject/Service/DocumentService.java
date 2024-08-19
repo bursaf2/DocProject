@@ -19,27 +19,31 @@ public class DocumentService {
     ConversionWordPdfService conversionwordpdfservice = new ConversionWordPdfServiceImpl();
 
     public void processWordTemplate(File templateFile, JsonNode jsonData) throws IOException {
+        // Load the template file into an XWPFDocument
         XWPFDocument document = new XWPFDocument(templateFile.toURI().toURL().openStream());
 
+        // Replace placeholders with the data provided in JSON
         replacePlaceholders(document, jsonData);
         replacePlaceholdersInHeadersAndFooters(document, jsonData);
 
+        // Determine the output file names
         String fullFileName = templateFile.getName();
         int dotIndex = fullFileName.lastIndexOf(".");
         String filledFileName = (dotIndex == -1) ? fullFileName : fullFileName.substring(0, dotIndex);
+        String filledWordFileName = filledFileName + "_filled.docx";
+        File filledDocxFile = new File("uploads/" + filledWordFileName);
 
-        File filledDocxFile = new File("uploads/"+ filledFileName + "_filled.docx");
+        // Write the filled document to a file
         try (FileOutputStream out = new FileOutputStream(filledDocxFile)) {
             document.write(out);
         }
-        String filledWordFileName = "uploads/"+ filledFileName + "_filled.docx";
-        String outputPdfFileName = "uploads/" +filledFileName + "_filled.pdf";
-        try {
-            conversionwordpdfservice.convertWordToPdf(filledWordFileName,outputPdfFileName);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
 
+        // Convert the filled Word document to PDF
+        try {
+            conversionwordpdfservice.convertWordToPdf(filledFileName + "_filled");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to convert Word to PDF: " + e.getMessage(), e);
+        }
     }
     private void replacePlaceholdersInHeadersAndFooters(XWPFDocument document, JsonNode jsonData) {
         List<KeyValuePair> flatJsonData = flattenJson(jsonData, "");
