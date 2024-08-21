@@ -1,23 +1,21 @@
 package com.example.DocProject.Controller;
 
 import com.example.DocProject.Service.PdfService;
-import com.example.DocProject.Service.PdfServiceImpl;
 import lombok.AllArgsConstructor;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import net.sourceforge.tess4j.TesseractException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
+
 @AllArgsConstructor
 @RestController
 @RequestMapping("/api/pdf")
 public class PdfController {
 
-    PdfService pdfService ;
+    PdfService pdfService;
 
     @PostMapping("/create")
     public ResponseEntity<String> createPdf(@RequestParam String fileName,
@@ -65,12 +63,8 @@ public class PdfController {
     }
 
 
-
-
-
-
     @PostMapping("/sign")
-    public String signPdf(@RequestParam String sourceFileName, @RequestParam String signedFileName, @RequestParam String keystoreName, String password ) {
+    public String signPdf(@RequestParam String sourceFileName, @RequestParam String signedFileName, @RequestParam String keystoreName, String password) {
         try {
             pdfService.signPdf(sourceFileName, signedFileName, keystoreName, password);
             return "PDF signed successfully!";
@@ -79,7 +73,6 @@ public class PdfController {
             return "Error signing PDF: " + e.getMessage();
         }
     }
-
 
 
     @PostMapping("/createKeystore")
@@ -105,6 +98,23 @@ public class PdfController {
         }
     }
 
+
+    @PostMapping("/imageToPdfOCR")
+    public String imageToPdfOCR(
+            @RequestParam String imagePath,
+            @RequestParam Boolean isOCR) throws Exception {
+        try {
+            if (isOCR){
+                pdfService.convertImageToPdfWithOCR(imagePath);
+            }else {
+                pdfService.convertImageToPdf(imagePath);
+            }
+            return "Image converted to PDF successfully.";
+        } catch (IOException | TesseractException e) {
+            e.printStackTrace();
+            return "Failed to convert image to PDF.";
+        }
+    }
 
 
 }
