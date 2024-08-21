@@ -108,6 +108,13 @@
 			<version>1.70</version>
 		</dependency>
 
+		<!-- Tesseract (Tess4J) -->
+		<dependency>
+			<groupId>net.sourceforge.tess4j</groupId>
+			<artifactId>tess4j</artifactId>
+			<version>5.2.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
