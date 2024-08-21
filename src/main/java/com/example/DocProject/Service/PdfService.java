@@ -16,4 +16,6 @@ public interface PdfService {
      void signPdf(String sourceFileName, String signedFileName, String keystoreName, String password) throws Exception;
      void convertImageToPdf(String imagePath) throws IOException;
      void convertImageToPdfWithOCR(String imageFile) throws Exception;
+     void mergePdfs(List<String> sourceFileNames, String outputFileName) throws IOException;
+     void splitPdf(String sourceFileName, int startPage, int endPage) throws IOException;
 }

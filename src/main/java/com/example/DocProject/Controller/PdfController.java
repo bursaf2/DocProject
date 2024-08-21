@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 @AllArgsConstructor
@@ -116,5 +117,26 @@ public class PdfController {
         }
     }
 
+    @PostMapping("/merge")
+    public String mergePdfs(@RequestParam String[] fileNames, @RequestParam String outputFileName) {
+        try {
+            pdfService.mergePdfs(Arrays.asList(fileNames), outputFileName);
+            return "PDFs successfully merged.";
+        } catch (IOException e) {
+            return "Error merging PDFs: " + e.getMessage();
+        }
+    }
+
+    @PostMapping("/split")
+    public String splitPdf(@RequestParam String fileName,
+                           @RequestParam int startPage,
+                           @RequestParam int endPage) {
+        try {
+            pdfService.splitPdf(fileName, startPage, endPage);
+            return "Selected pages successfully split from PDF.";
+        } catch (IOException e) {
+            return "Error splitting PDF: " + e.getMessage();
+        }
+    }
 
 }

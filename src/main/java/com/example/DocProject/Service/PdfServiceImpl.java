@@ -4,6 +4,8 @@ import com.itextpdf.signatures.*;
 import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.Word;
+import org.apache.pdfbox.multipdf.PDFMergerUtility;
+import org.apache.pdfbox.multipdf.Splitter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -238,8 +240,7 @@ public class PdfServiceImpl implements PdfService {
         }
     }
 
-
-
+    @Override
     public void convertImageToPdf(String imagePath) throws IOException {
         // Dosya isimlerini ve yollarını ayarla
         Path imageFilePath = root.resolve(imagePath);
@@ -266,6 +267,7 @@ public class PdfServiceImpl implements PdfService {
 
 
 
+    @Override
     public void convertImageToPdfWithOCR(String imageFile) throws Exception {
 
         System.setProperty("TESSDATA_PREFIX", "C:/Program Files/JetBrains/IntelliJ IDEA 2024.1.4/plugins/tesseract/tessdata");
@@ -338,6 +340,41 @@ public class PdfServiceImpl implements PdfService {
             }
         }
         return b.toString();
+    }
+
+
+    public void mergePdfs(List<String> sourceFileNames, String outputFileName) throws IOException {
+        PDFMergerUtility merger = new PDFMergerUtility();
+        merger.setDestinationFileName(root.resolve(outputFileName).toString());
+
+        for (String sourceFileName : sourceFileNames) {
+            merger.addSource(root.resolve(sourceFileName).toFile());
+        }
+
+        merger.mergeDocuments(null);
+    }
+
+    public void splitPdf(String sourceFileName, int startPage, int endPage) throws IOException {
+        File sourceFile = root.resolve(sourceFileName).toFile();
+        PDDocument document = PDDocument.load(sourceFile);
+
+        int totalPages = document.getNumberOfPages();
+        startPage = Math.max(1, startPage);
+        endPage = Math.min(totalPages, endPage);
+
+        // Create new PDDocument and add the pages
+        PDDocument newDocument = new PDDocument();
+        for (int i = startPage - 1; i < endPage; i++) {
+            newDocument.addPage(document.getPage(i));
+        }
+
+        // save the new PDF
+        String baseName = sourceFileName.replace(".pdf", "");
+        String outputPath = root.resolve(baseName + "_pages_" + startPage + "_to_" + endPage + ".pdf").toString();
+        newDocument.save(outputPath);
+        newDocument.close();
+
+        document.close();
     }
 
 }
