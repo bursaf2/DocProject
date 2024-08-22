@@ -2,18 +2,17 @@ package com.example.DocProject.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
-
-/*
- * This class hold to flatten json data .
- */
-public class KeyValuePair implements Cloneable{
+public class KeyValuePair implements Cloneable {
     private String key;
     private String value;
     private String type; // Will be used only for arrays
     private int arraySize; // Will be used only for arrays
+    private List<KeyValuePair> arrayElements; // To hold elements of array if needed
+
     @Override
     public KeyValuePair clone() {
         try {
@@ -22,13 +21,15 @@ public class KeyValuePair implements Cloneable{
             throw new AssertionError(); // Can not happen
         }
     }
+
     @Override
     public String toString() {
-        return  "key='" + key + '\'' +
+        return "key='" + key + '\'' +
                 ", value='" + value + '\'' +
                 ", type='" + type + '\'' +
-                ", arraySize=" + arraySize ;
+                ", arraySize=" + arraySize;
     }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
