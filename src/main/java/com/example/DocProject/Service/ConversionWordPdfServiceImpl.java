@@ -2,10 +2,6 @@ package com.example.DocProject.Service;
 
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
-
 @Service
 public class ConversionWordPdfServiceImpl implements ConversionWordPdfService {
 
@@ -37,23 +33,6 @@ public class ConversionWordPdfServiceImpl implements ConversionWordPdfService {
         );
 
         Process process = processBuilder.start();
-
-        // Capture the output and error streams for debugging
-        try (BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getInputStream()));
-             BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-
-            String s;
-            System.out.println("Standard output:");
-            while ((s = stdInput.readLine()) != null) {
-                System.out.println(s);
-            }
-
-            System.out.println("Error output (if any):");
-            while ((s = stdError.readLine()) != null) {
-                System.err.println(s);
-            }
-
-        }
 
         int exitCode = process.waitFor();
 

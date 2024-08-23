@@ -1,4 +1,5 @@
 package com.example.DocProject.Service;
+
 import com.example.DocProject.model.KeyValuePair;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.poi.xwpf.usermodel.*;
@@ -75,7 +76,6 @@ public class DocumentService {
         }
 
 
-
         // Iterate over all document elements
         for (IBodyElement element : document.getBodyElements()) {
             if (element instanceof XWPFParagraph paragraph) {
@@ -88,12 +88,15 @@ public class DocumentService {
 
     private void replaceJsonDataParagraph(List<KeyValuePair> flatJsonData, XWPFParagraph paragraph) {
 
+
         for (KeyValuePair pair : flatJsonData) {
 
             String placeholder = "{{" + pair.getKey() + "}}";
             if (paragraph.getText().contains(placeholder)) {
                 String replacedText = paragraph.getText().replace(placeholder, pair.getValue());
                 replacedText = replacedText.replace("`", "");
+                // Replace expressions in the text
+                replacedText = replaceExpressions(replacedText, flatJsonData);
                 preserveRuns(paragraph, replacedText);
             }
         }
@@ -191,57 +194,32 @@ public class DocumentService {
             }
         }
     }
-    public void printFlatJsonData(List<KeyValuePair> flatJsonData) {
-        System.out.println("Size of flatJsonData: " + flatJsonData.size());
-        for (KeyValuePair pair : flatJsonData) {
-            printKeyValuePair(pair, 0);
-        }
-    }
-
-    private void printKeyValuePair(KeyValuePair pair, int indentLevel) {
-        String indent = " ".repeat(indentLevel * 2); // İçe girme için boşluk
-        if ("VALUE".equals(pair.getType())) {
-            System.out.println(indent + "Key: " + pair.getKey() + ", Value: " + pair.getValue());
-        } else if ("ARRAY".equals(pair.getType())) {
-            System.out.println(indent + "Array Key: " + pair.getKey() + " (Array Size: " +  pair.getArraySize() + ")");
-            if (pair.getArrayElements() != null) {
-                // Dizinin içindeki her bir elemanı işaretle
-                for (KeyValuePair arrayElement : pair.getArrayElements()) {
-                    printKeyValuePair(arrayElement, indentLevel + 1);
-                }
-            }
-        }
-    }
 
     private List<KeyValuePair> flattenJson(JsonNode jsonNode, String prefix) {
         List<KeyValuePair> flatList = new ArrayList<>();
-        flattenJsonHelper(jsonNode, prefix, flatList);
-        printFlatJsonData(flatList);
+        String type = "";
+        int size = -1;
+        flattenJsonHelper(jsonNode, prefix, flatList, type, size);
+        flatList.forEach(System.out::println); // Print out each key-value pair
         return flatList;
     }
 
-    private void flattenJsonHelper(JsonNode jsonNode, String prefix, List<KeyValuePair> flatList) {
+    private void flattenJsonHelper(JsonNode jsonNode, String prefix, List<KeyValuePair> flatList, String type, int size) {
         if (jsonNode.isObject()) {
             jsonNode.fields().forEachRemaining(entry -> {
                 String newPrefix = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
-                flattenJsonHelper(entry.getValue(), newPrefix, flatList);
+                flattenJsonHelper(entry.getValue(), newPrefix, flatList, type, size);
             });
         } else if (jsonNode.isArray()) {
-            // Sadece bu seviyedeki array'i düzleştir
-            int arraySize = jsonNode.size();  // Dış array'in boyutunu doğru şekilde alıyoruz
-            List<KeyValuePair> arrayElements = new ArrayList<>();
-            int index = 0;
-            for (JsonNode element : jsonNode) {
-                String arrayPrefix = prefix ;  // Her öğe için index ekliyoruz.
-                flattenJsonHelper(element, arrayPrefix, arrayElements);  // İç array elemanlarını düzleştir ve ayrı listeye ekle
-                index++;
+            for (int i = 0; i < jsonNode.size(); i++) {
+                String newPrefix = prefix;
+                flattenJsonHelper(jsonNode.get(i), newPrefix, flatList, "ARRAY", jsonNode.size());
             }
-            // Dış array'in boyutunu belirlemek için bir `ARRAY` türü ekle
-            flatList.add(new KeyValuePair(prefix, null, "ARRAY", arraySize, arrayElements));
         } else if (jsonNode.isValueNode()) {
-            flatList.add(new KeyValuePair(prefix, jsonNode.asText(), "VALUE", -1, null));
+            flatList.add(new KeyValuePair(prefix, jsonNode.asText(), type, size));
         }
     }
+
 
     private String evaluateExpression(String expression, List<KeyValuePair> flatJsonData) {
         Pattern sumPattern = Pattern.compile("\\$sum\\((.*?)\\)");
