@@ -1,39 +1,33 @@
 package com.example.DocProject.Controller;
 
 import com.example.DocProject.Service.PdfService;
-import com.example.DocProject.Service.PdfServiceImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
+import net.sourceforge.tess4j.TesseractException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
+@AllArgsConstructor
 @RestController
 @RequestMapping("/api/pdf")
 public class PdfController {
 
-    PdfService pdfService = new PdfServiceImpl();
+    PdfService pdfService;
 
     @PostMapping("/create")
-    public ResponseEntity<String> createPdf(@RequestParam String fileName) {
-        pdfService.createPdf(fileName);
+    public ResponseEntity<String> createPdf(@RequestParam String fileName,
+                                            @RequestParam String text,
+                                            @RequestParam String fontName,
+                                            @RequestParam int fontSize,
+                                            @RequestParam(required = false) String imageName) {
+        pdfService.createPdf(fileName, text, fontName, fontSize, imageName);
         return ResponseEntity.ok("PDF created successfully at " + fileName);
     }
 
-    @PostMapping("/modify")
-    public ResponseEntity<String> modifyPdf(@RequestParam String fileName, @RequestParam String newFileName) {
-
-        try {
-            pdfService.modifyPdf(fileName + ".pdf", newFileName);
-            return ResponseEntity.ok("PDF modified successfully and saved to " + newFileName);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(500).body("Failed to modify PDF: " + e.getMessage());
-        }
-    }
 
     @PostMapping("/extractText")
     public ResponseEntity<String> extractTextFromPdf(@RequestParam String pdfFileName, @RequestParam String txtFileName) {
@@ -70,23 +64,8 @@ public class PdfController {
     }
 
 
-    @PostMapping("/add-signature")
-    public ResponseEntity<String> addSignature(@RequestParam("pdfFilename") String pdfFilename,
-                                               @RequestParam("imageFilename") String imageFilename) {
-        try {
-            // PDF'ye imza ekle
-            pdfService.addSignature(pdfFilename, imageFilename);
-
-            return new ResponseEntity<>("Signature added successfully. Output file: signed_" + pdfFilename, HttpStatus.OK);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Error adding signature: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-
     @PostMapping("/sign")
-    public String signPdf(@RequestParam String sourceFileName, @RequestParam String signedFileName, @RequestParam String keystoreName, String password ) {
+    public String signPdf(@RequestParam String sourceFileName, @RequestParam String signedFileName, @RequestParam String keystoreName, String password) {
         try {
             pdfService.signPdf(sourceFileName, signedFileName, keystoreName, password);
             return "PDF signed successfully!";
@@ -95,7 +74,6 @@ public class PdfController {
             return "Error signing PDF: " + e.getMessage();
         }
     }
-
 
 
     @PostMapping("/createKeystore")
@@ -122,5 +100,43 @@ public class PdfController {
     }
 
 
+    @PostMapping("/imageToPdfOCR")
+    public String imageToPdfOCR(
+            @RequestParam String imagePath,
+            @RequestParam Boolean isOCR) throws Exception {
+        try {
+            if (isOCR){
+                pdfService.convertImageToPdfWithOCR(imagePath);
+            }else {
+                pdfService.convertImageToPdf(imagePath);
+            }
+            return "Image converted to PDF successfully.";
+        } catch (IOException | TesseractException e) {
+            e.printStackTrace();
+            return "Failed to convert image to PDF.";
+        }
+    }
+
+    @PostMapping("/merge")
+    public String mergePdfs(@RequestParam String[] fileNames, @RequestParam String outputFileName) {
+        try {
+            pdfService.mergePdfs(Arrays.asList(fileNames), outputFileName);
+            return "PDFs successfully merged.";
+        } catch (IOException e) {
+            return "Error merging PDFs: " + e.getMessage();
+        }
+    }
+
+    @PostMapping("/split")
+    public String splitPdf(@RequestParam String fileName,
+                           @RequestParam int startPage,
+                           @RequestParam int endPage) {
+        try {
+            pdfService.splitPdf(fileName, startPage, endPage);
+            return "Selected pages successfully split from PDF.";
+        } catch (IOException e) {
+            return "Error splitting PDF: " + e.getMessage();
+        }
+    }
 
 }
