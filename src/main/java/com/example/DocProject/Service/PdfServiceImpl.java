@@ -5,7 +5,6 @@ import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.Word;
 import org.apache.pdfbox.multipdf.PDFMergerUtility;
-import org.apache.pdfbox.multipdf.Splitter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -141,14 +140,17 @@ public class PdfServiceImpl implements PdfService {
 
     @Override
     public void convertPdfToImages(String fileName) throws IOException {
-        String pdfFilePath = "uploads/" + fileName + ".pdf";
+        String pdfFilePath = root.resolve(fileName).toString();
+
         File pdfFile = new File(pdfFilePath);
         PDDocument document = PDDocument.load(pdfFile);
         PDFRenderer pdfRenderer = new PDFRenderer(document);
 
         for (int pageIndex = 0; pageIndex < document.getNumberOfPages(); pageIndex++) {
             BufferedImage image = pdfRenderer.renderImageWithDPI(pageIndex, 300);
-            File outputFile = new File(fileName + ".png");
+
+            String pngFileName = fileName.replace(".pdf", ".png");
+            File outputFile = new File(root.resolve(pngFileName).toString());
             ImageIO.write(image, "PNG", outputFile);
             System.out.println("Saved: " + outputFile.getAbsolutePath());
         }
