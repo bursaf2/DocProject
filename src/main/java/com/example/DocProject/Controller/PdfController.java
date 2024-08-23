@@ -2,6 +2,7 @@ package com.example.DocProject.Controller;
 
 import com.example.DocProject.Service.PdfService;
 import com.example.DocProject.Service.PdfServiceImpl;
+import lombok.AllArgsConstructor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,29 +12,23 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-
+@AllArgsConstructor
 @RestController
 @RequestMapping("/api/pdf")
 public class PdfController {
 
-    PdfService pdfService = new PdfServiceImpl();
+    PdfService pdfService ;
 
     @PostMapping("/create")
-    public ResponseEntity<String> createPdf(@RequestParam String fileName) {
-        pdfService.createPdf(fileName);
+    public ResponseEntity<String> createPdf(@RequestParam String fileName,
+                                            @RequestParam String text,
+                                            @RequestParam String fontName,
+                                            @RequestParam int fontSize,
+                                            @RequestParam(required = false) String imageName) {
+        pdfService.createPdf(fileName, text, fontName, fontSize, imageName);
         return ResponseEntity.ok("PDF created successfully at " + fileName);
     }
 
-    @PostMapping("/modify")
-    public ResponseEntity<String> modifyPdf(@RequestParam String fileName, @RequestParam String newFileName) {
-
-        try {
-            pdfService.modifyPdf(fileName + ".pdf", newFileName);
-            return ResponseEntity.ok("PDF modified successfully and saved to " + newFileName);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(500).body("Failed to modify PDF: " + e.getMessage());
-        }
-    }
 
     @PostMapping("/extractText")
     public ResponseEntity<String> extractTextFromPdf(@RequestParam String pdfFileName, @RequestParam String txtFileName) {
@@ -70,19 +65,8 @@ public class PdfController {
     }
 
 
-    @PostMapping("/add-signature")
-    public ResponseEntity<String> addSignature(@RequestParam("pdfFilename") String pdfFilename,
-                                               @RequestParam("imageFilename") String imageFilename) {
-        try {
-            // PDF'ye imza ekle
-            pdfService.addSignature(pdfFilename, imageFilename);
 
-            return new ResponseEntity<>("Signature added successfully. Output file: signed_" + pdfFilename, HttpStatus.OK);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return new ResponseEntity<>("Error adding signature: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+
 
 
     @PostMapping("/sign")

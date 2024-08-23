@@ -54,12 +54,8 @@ public class PdfServiceImpl implements PdfService {
 
     private final Path root = Paths.get("uploads");
 
-    /*
-    private static final String KEYSTORE = "C:\\Users\\mehmet.erdem\\Desktop\\DocProject\\yilmaz-keystore.p12";
-    private static final char[] PASSWORD = "123123".toCharArray();
-*/
     @Override
-    public void createPdf(String pdfName) {
+    public void createPdf(String pdfName, String text, String fontName, int fontSize, String imageName) {
         Path filePath = root.resolve(pdfName);
         PDDocument document = new PDDocument();
         PDPage page = new PDPage();
@@ -67,14 +63,41 @@ public class PdfServiceImpl implements PdfService {
 
         try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
             contentStream.beginText();
-            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
-            contentStream.newLineAtOffset(100, 700);
-            contentStream.showText("Hello, PDFBox!");
-            contentStream.endText();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
+            // Set the font based on user input
+            PDType1Font font = PDType1Font.HELVETICA;
+            switch (fontName.toUpperCase()) {
+                case "HELVETICA_BOLD":
+                    font = PDType1Font.HELVETICA_BOLD;
+                    break;
+                case "TIMES_ROMAN":
+                    font = PDType1Font.TIMES_ROMAN;
+                    break;
+                case "COURIER":
+                    font = PDType1Font.COURIER;
+                    break;
+                // Add more fonts as needed
+            }
+
+            contentStream.setFont(font, fontSize);
+            contentStream.newLineAtOffset(100, 100);
+            contentStream.showText(text);
+            contentStream.endText();
+
+            // Add the image if provided
+            if (imageName != null && !imageName.isEmpty()) {
+                Path imagePath = root.resolve(imageName);
+
+                PDImageXObject image = PDImageXObject.createFromFile(imagePath.toString(), document);
+                float imageWidth = image.getWidth() * 0.2f; // 50% of original size
+                float imageHeight = image.getHeight() * 0.2f; // 50% of original size
+
+                contentStream.drawImage(image, 100, 150, imageWidth, imageHeight); // Adjust position and size as needed
+
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         try {
             document.save(filePath.toFile());
         } catch (IOException e) {
@@ -85,22 +108,6 @@ public class PdfServiceImpl implements PdfService {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-    }
-    @Override
-    public void modifyPdf(String filePath, String outputFilePath) {
-        try (PDDocument document = PDDocument.load(root.resolve(filePath).toFile())) {
-            PDPageContentStream contentStream = new PDPageContentStream(document, document.getPage(0), PDPageContentStream.AppendMode.APPEND, true, true);
-            contentStream.beginText();
-            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
-            contentStream.newLineAtOffset(100, 650);
-            contentStream.showText("Modified with PDFBox!");
-            contentStream.endText();
-            contentStream.close();
-            document.save(root.resolve(outputFilePath).toFile());
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error while modifying PDF", e);
         }
     }
 
@@ -170,28 +177,24 @@ public class PdfServiceImpl implements PdfService {
             PDPage page = document.getPage(document.getNumberOfPages() - 1);
             PDImageXObject pdImage = PDImageXObject.createFromFile(String.valueOf(imagePath.toFile()), document);
 
-            // Sayfadaki mevcut metni ve boş alanları analiz et
+
             PDFTextStripper textStripper = new PDFTextStripper();
             String pageText = textStripper.getText(document);
 
-            // Sayfanın boyutlarını al
+
             float pageWidth = page.getMediaBox().getWidth();
             float pageHeight = page.getMediaBox().getHeight();
 
-            // İmza fotoğrafının boyutlarını ayarla
+
             float imageWidth = 150;
             float imageHeight = 50;
 
-            // İmzayı uygun bir boşluğa yerleştirme mantığı
-            // Bu örnekte, sayfanın alt kısmında boş bir alan arıyoruz
-            float x = (pageWidth - imageWidth) / 2; // Ortalanmış konum
-            float y = 50; // Sayfanın alt kısmında
-            boolean hasTextBelow = pageText.contains("some text pattern"); // İmzanın yerleştirilmesini engelleyen metinlerin kontrolü
 
+            float x = (pageWidth - imageWidth) / 2;
+            float y = 50;
+            boolean hasTextBelow = pageText.contains("some text pattern");
             if (hasTextBelow) {
-                // Eğer metin varsa, imzayı yerleştirmek için uygun boş alanı bul
-                // Bu örnekte, boş alana imzayı yerleştirme mantığını basit tutuyoruz
-                y = pageHeight - imageHeight - 50; // Sayfanın alt kısmında boş yer bırakma
+                y = pageHeight - imageHeight - 50;
             }
 
             try (PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true)) {

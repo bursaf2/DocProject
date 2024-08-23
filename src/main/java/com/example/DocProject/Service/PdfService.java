@@ -5,8 +5,7 @@ import java.io.IOException;
 import java.util.List;
 
 public interface PdfService {
-     void createPdf(String filePath);
-     void modifyPdf(String filePath,String outputFilePath);
+     void createPdf(String pdfName, String text, String fontName, int fontSize, String imagePath);
      void extractTextFromPdf(String filePath,String textFilePath);
      List<String> getAllFiles();
      byte[]getFileByName(String filename);

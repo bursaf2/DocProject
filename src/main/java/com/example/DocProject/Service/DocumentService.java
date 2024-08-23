@@ -26,6 +26,7 @@ public class DocumentService {
         replacePlaceholders(document, jsonData);
         //replacePlaceholdersInHeadersAndFooters(document, jsonData);
 
+
         // Determine the output file names
         String fullFileName = templateFile.getName();
         int dotIndex = fullFileName.lastIndexOf(".");
@@ -44,7 +45,6 @@ public class DocumentService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to convert Word to PDF: " + e.getMessage(), e);
         }
-
          */
     }
     private void replacePlaceholdersInHeadersAndFooters(XWPFDocument document, JsonNode jsonData) {
@@ -213,34 +213,17 @@ public class DocumentService {
             }
         }
     }
-    public void printFlatJsonData(List<KeyValuePair> flatJsonData) {
-        System.out.println("Size of flatJsonData: " + flatJsonData.size());
-        for (KeyValuePair pair : flatJsonData) {
-            printKeyValuePair(pair, 0);
-        }
-    }
-
-    private void printKeyValuePair(KeyValuePair pair, int indentLevel) {
-        String indent = " ".repeat(indentLevel * 2); // İçe girme için boşluk
-        if ("VALUE".equals(pair.getType())) {
-            System.out.println(indent + "Key: " + pair.getKey() + ", Value: " + pair.getValue());
-        } else if ("ARRAY".equals(pair.getType())) {
-            System.out.println(indent + "Array Key: " + pair.getKey() + " (Array Size: " +  pair.getArraySize() + ")");
-            if (pair.getArrayElements() != null) {
-                // Dizinin içindeki her bir elemanı işaretle
-                for (KeyValuePair arrayElement : pair.getArrayElements()) {
-                    printKeyValuePair(arrayElement, indentLevel + 1);
-                }
-            }
-        }
-    }
-
-
 
     private List<KeyValuePair> flattenJson(JsonNode jsonNode, String prefix) {
         List<KeyValuePair> flatList = new ArrayList<>();
+
         flattenJsonHelper(jsonNode, prefix, flatList);
-        printFlatJsonData(flatList);
+
+        // Tüm liste elemanlarını sırayla yazdırabilir veya işleyebilirsin
+        for (KeyValuePair kvp : flatList) {
+            System.out.println("Key: " + kvp.getKey() + ", Value: " + kvp.getValue() + ", Type: " + kvp.getType() + ", Size: " + kvp.getArraySize());
+        }
+
         return flatList;
     }
 
@@ -251,24 +234,17 @@ public class DocumentService {
                 flattenJsonHelper(entry.getValue(), newPrefix, flatList);
             });
         } else if (jsonNode.isArray()) {
-            // Sadece bu seviyedeki array'i düzleştir
-            int arraySize = jsonNode.size();  // Dış array'in boyutunu doğru şekilde alıyoruz
-            List<KeyValuePair> arrayElements = new ArrayList<>();
-            int index = 0;
+            int arraySize = jsonNode.size();
             for (JsonNode element : jsonNode) {
-                String arrayPrefix = prefix ;  // Her öğe için index ekliyoruz.
-                flattenJsonHelper(element, arrayPrefix, arrayElements);  // İç array elemanlarını düzleştir ve ayrı listeye ekle
-                index++;
+                String arrayPrefix = prefix;
+                flattenJsonHelper(element, arrayPrefix, flatList);
             }
-            // Dış array'in boyutunu belirlemek için bir `ARRAY` türü ekle
-            flatList.add(new KeyValuePair(prefix, null, "ARRAY", arraySize, arrayElements));
+
+            flatList.add(new KeyValuePair(prefix, null, "ARRAY", arraySize, null));
         } else if (jsonNode.isValueNode()) {
             flatList.add(new KeyValuePair(prefix, jsonNode.asText(), "VALUE", -1, null));
         }
     }
-
-
-
 
 
     private String evaluateExpression(String expression, List<KeyValuePair> flatJsonData) {
