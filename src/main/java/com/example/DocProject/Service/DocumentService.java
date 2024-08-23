@@ -1,7 +1,6 @@
 package com.example.DocProject.Service;
 import com.example.DocProject.model.KeyValuePair;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
 import org.apache.poi.xwpf.usermodel.*;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +23,6 @@ public class DocumentService {
 
         // Replace placeholders with the data provided in JSON
         replacePlaceholders(document, jsonData);
-        //replacePlaceholdersInHeadersAndFooters(document, jsonData);
 
         // Determine the output file names
         String fullFileName = templateFile.getName();
@@ -37,7 +35,7 @@ public class DocumentService {
         try (FileOutputStream out = new FileOutputStream(filledDocxFile)) {
             document.write(out);
         }
-        /*
+
         // Convert the filled Word document to PDF
         try {
             conversionwordpdfservice.convertWordToPdf(filledFileName + "_filled");
@@ -45,39 +43,38 @@ public class DocumentService {
             throw new RuntimeException("Failed to convert Word to PDF: " + e.getMessage(), e);
         }
 
-         */
-    }
-    private void replacePlaceholdersInHeadersAndFooters(XWPFDocument document, JsonNode jsonData) {
-        List<KeyValuePair> flatJsonData = flattenJson(jsonData, "");
-
-        // Accessing headers and footers via XWPFDocument
-        XWPFHeaderFooterPolicy headerFooterPolicy = document.getHeaderFooterPolicy();
-
-        if (headerFooterPolicy != null) {
-            // Replace placeholders in headers
-            replaceTextInHeaderOrFooter(headerFooterPolicy.getHeader(XWPFHeaderFooterPolicy.DEFAULT), flatJsonData);
-
-
-            // Replace placeholders in footers
-            replaceTextInHeaderOrFooter(headerFooterPolicy.getFooter(XWPFHeaderFooterPolicy.DEFAULT), flatJsonData);
-        }
-    }
-
-    private void replaceTextInHeaderOrFooter(XWPFHeaderFooter headerFooter, List<KeyValuePair> flatJsonData) {
-        if (headerFooter != null) {
-            // Replace placeholders in paragraphs
-            for (XWPFParagraph paragraph : headerFooter.getParagraphs()) {
-                replaceJsonDataParagraph(flatJsonData, paragraph);
-            }
-            // Replace placeholders in tables
-            for (XWPFTable table : headerFooter.getTables()) {
-                replaceJsonDataTable(flatJsonData, table);
-            }
-        }
     }
 
     private void replacePlaceholders(XWPFDocument document, JsonNode jsonData) {
         List<KeyValuePair> flatJsonData = flattenJson(jsonData, "");
+
+        for (XWPFFooter footer : document.getFooterList()) {
+
+            // Paragrafları Almak ve Resimleri İşlemek
+            for (XWPFParagraph paragraph : footer.getParagraphs()) {
+                replaceJsonDataParagraph(flatJsonData, paragraph);
+            }
+
+            // Tabloları Almak ve Resimleri İşlemek
+            for (XWPFTable table : footer.getTables()) {
+                replaceJsonDataTable(flatJsonData, table);
+            }
+        }
+
+        for (XWPFHeader header : document.getHeaderList()) {
+
+            // Paragrafları Almak ve Resimleri İşlemek
+            for (XWPFParagraph paragraph : header.getParagraphs()) {
+                replaceJsonDataParagraph(flatJsonData, paragraph);
+            }
+
+            // Tabloları Almak ve Resimleri İşlemek
+            for (XWPFTable table : header.getTables()) {
+                replaceJsonDataTable(flatJsonData, table);
+            }
+        }
+
+
 
         // Iterate over all document elements
         for (IBodyElement element : document.getBodyElements()) {
@@ -90,59 +87,36 @@ public class DocumentService {
     }
 
     private void replaceJsonDataParagraph(List<KeyValuePair> flatJsonData, XWPFParagraph paragraph) {
-        List<XWPFRun> runs = paragraph.getRuns();
-        if (runs != null && !runs.isEmpty()) {
-            StringBuilder paragraphText = new StringBuilder();
-            for (XWPFRun run : runs) {
-                paragraphText.append(run.getText(0));
+
+        for (KeyValuePair pair : flatJsonData) {
+
+            String placeholder = "{{" + pair.getKey() + "}}";
+            if (paragraph.getText().contains(placeholder)) {
+                String replacedText = paragraph.getText().replace(placeholder, pair.getValue());
+                replacedText = replacedText.replace("`", "");
+                preserveRuns(paragraph, replacedText);
             }
-            String text = paragraphText.toString();
-
-            // Remove backticks from the text for easier matching
-            text = text.replace("`", "");
-
-            // Replace expressions in the text
-            text = replaceExpressions(text, flatJsonData);
-
-            // Replace placeholders in the text
-            for (KeyValuePair pair : flatJsonData) {
-                String placeholder = "{{" + pair.getKey().replace("`", "") + "}}";
-                if (text.contains(placeholder)) {
-                    text = text.replace(placeholder, pair.getValue());
-                }
-            }
-
-            // Preserve existing runs and replace text
-            preserveRuns(paragraph, text);
         }
     }
+
     private void preserveRuns(XWPFParagraph paragraph, String finalText) {
-        List<XWPFRun> runs = paragraph.getRuns();
-        int runIndex = 0;
-        int textIndex = 0;
+        // split paragraph to rows
+        String[] lines = finalText.split("\n");
 
-        while (runIndex < runs.size() && textIndex < finalText.length()) {
-            XWPFRun run = runs.get(runIndex);
-            String runText = run.getText(0);
-            if (runText != null) {
-                int runLength = runText.length();
-                if (textIndex + runLength <= finalText.length()) {
-                    run.setText(finalText.substring(textIndex, textIndex + runLength), 0);
-                } else {
-                    run.setText(finalText.substring(textIndex), 0);
-                }
-                textIndex += runLength;
-            }
-            runIndex++;
+        // clean recent runs
+        int numberOfRuns = paragraph.getRuns().size();
+        for (int i = numberOfRuns - 1; i >= 0; i--) {
+            paragraph.removeRun(i);
         }
 
-        while (runIndex < runs.size()) {
-            paragraph.removeRun(runIndex);
-        }
-
-        if (textIndex < finalText.length()) {
+        // add rows to runs
+        for (int i = 0; i < lines.length; i++) {
             XWPFRun run = paragraph.createRun();
-            run.setText(finalText.substring(textIndex), 0);
+            run.setText(lines[i]);
+            // If not last row,add break
+            if (i < lines.length - 1) {
+                run.addBreak();
+            }
         }
     }
 
@@ -196,18 +170,22 @@ public class DocumentService {
                             paragraphText.append(run.getText(0));
                         }
                         String text = paragraphText.toString();
+                        text = text.replace("`", "");
+
 
                         for (KeyValuePair pair : flatJsonDataCopy) {
                             String placeholder = "{{" + pair.getKey() + "}}";
                             if (text.contains(placeholder)) {
                                 text = text.replace(placeholder, pair.getValue());
+                                preserveRuns(paragraph, text);
+
                                 if (pair.getType().equals("ARRAY")) {    // this part check all array item and provide print all items
                                     pair.setKey(null);
                                 }
                             }
                         }
 
-                        preserveRuns(paragraph, text);
+                        //preserveRuns(paragraph, text);
                     }
                 }
             }
@@ -234,8 +212,6 @@ public class DocumentService {
             }
         }
     }
-
-
 
     private List<KeyValuePair> flattenJson(JsonNode jsonNode, String prefix) {
         List<KeyValuePair> flatList = new ArrayList<>();
@@ -266,10 +242,6 @@ public class DocumentService {
             flatList.add(new KeyValuePair(prefix, jsonNode.asText(), "VALUE", -1, null));
         }
     }
-
-
-
-
 
     private String evaluateExpression(String expression, List<KeyValuePair> flatJsonData) {
         Pattern sumPattern = Pattern.compile("\\$sum\\((.*?)\\)");
