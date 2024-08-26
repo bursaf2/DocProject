@@ -13,8 +13,36 @@ public class ConversionWordPdfServiceImpl implements ConversionWordPdfService {
     @Override
     public void convertWordToPdf(String fileName) throws Exception {
         // Append .docx if the file extension is missing
-        Document doc = new Document("uploads/"+fileName);
-        doc.save("converted.pdf");
+        if (!fileName.endsWith(".docx")) {
+            fileName += ".docx";
+        }
+
+        String inputFilePath = UPLOADS_DIR + fileName;
+        String outputDir = UPLOADS_DIR;
+
+        // Debug: Log the command being executed
+        System.out.println("Executing LibreOffice command:");
+        System.out.println(LIBREOFFICE_PATH + " --headless --convert-to pdf " + inputFilePath + " --outdir " + outputDir);
+
+        ProcessBuilder processBuilder = new ProcessBuilder(
+                LIBREOFFICE_PATH,
+                "--headless",
+                "--convert-to",
+                "pdf",
+                inputFilePath,
+                "--outdir",
+                outputDir
+        );
+
+        Process process = processBuilder.start();
+
+        int exitCode = process.waitFor();
+
+        if (exitCode != 0) {
+            throw new RuntimeException("LibreOffice conversion (Word to PDF) operation failed with exit code " + exitCode);
+        }
+
+        System.out.println("Conversion completed successfully. PDF saved in: " + outputDir);
     }
 
     @Override
@@ -22,6 +50,4 @@ public class ConversionWordPdfServiceImpl implements ConversionWordPdfService {
         Document document = new Document("uploads/"+fileName);
         document.save("uploads/converted.docx", SaveFormat.DocX);
     }
-
-
 }
