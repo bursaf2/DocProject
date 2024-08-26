@@ -18,11 +18,12 @@ public class DocumentController {
     @PostMapping("/generatePdf")
     public String generatePdf(
             @RequestParam("templateName") String templateName,
+            @RequestParam("pdf") boolean pdf,
             @RequestBody JsonNode jsonData) throws IOException {
 
         File templateFile = new File("uploads/" + templateName ); // it holds to word file path
 
-        documentService.processWordTemplate(templateFile, jsonData);
+        documentService.processWordTemplate(templateFile,pdf, jsonData);
 
         return "Word filled with name : " + templateName ;
 

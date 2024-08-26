@@ -18,7 +18,7 @@ public class DocumentService {
 
     ConversionWordPdfService conversionwordpdfservice = new ConversionWordPdfServiceImpl();
 
-    public void processWordTemplate(File templateFile, JsonNode jsonData) throws IOException {
+    public void processWordTemplate(File templateFile,boolean pdf, JsonNode jsonData) throws IOException {
         // Load the template file into an XWPFDocument
         XWPFDocument document = new XWPFDocument(templateFile.toURI().toURL().openStream());
 
@@ -38,12 +38,13 @@ public class DocumentService {
         }
 
         // Convert the filled Word document to PDF
-        try {
-            conversionwordpdfservice.convertWordToPdf(filledFileName + "_filled");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to convert Word to PDF: " + e.getMessage(), e);
+        if(pdf) {
+            try {
+                conversionwordpdfservice.convertWordToPdf(filledFileName + "_filled");
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to convert Word to PDF: " + e.getMessage(), e);
+            }
         }
-
     }
 
     private void replacePlaceholders(XWPFDocument document, JsonNode jsonData) {
