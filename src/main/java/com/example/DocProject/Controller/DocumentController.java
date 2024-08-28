@@ -2,6 +2,7 @@ package com.example.DocProject.Controller;
 
 import com.example.DocProject.Service.DocumentService;
 import lombok.AllArgsConstructor;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.springframework.web.bind.annotation.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.File;
@@ -19,7 +20,7 @@ public class DocumentController {
     public String generatePdf(
             @RequestParam("templateName") String templateName,
             @RequestParam("pdf") boolean pdf,
-            @RequestBody JsonNode jsonData) throws IOException {
+            @RequestBody JsonNode jsonData) throws IOException, InvalidFormatException {
 
         File templateFile = new File("uploads/" + templateName ); // it holds to word file path
 

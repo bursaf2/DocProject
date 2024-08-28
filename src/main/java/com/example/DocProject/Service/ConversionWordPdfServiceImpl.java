@@ -48,6 +48,7 @@ public class ConversionWordPdfServiceImpl implements ConversionWordPdfService {
     @Override
     public void convertPdfToWord(String fileName) throws Exception {
         Document document = new Document("uploads/"+fileName);
-        document.save("uploads/converted.docx", SaveFormat.DocX);
+        String newFileName = fileName.replace(".pdf", ".docx");
+        document.save("uploads/converted_"+newFileName, SaveFormat.DocX);
     }
 }

@@ -13,7 +13,7 @@ public interface PdfService {
      void createKeyStore(String keyStoreName, String keyStorePassword, String keyAlias, String keyPassword,
                          String firstNameLastName, String organizationalUnit, String organization,
                          String city, String state, String country) throws IOException, InterruptedException;
-     void signPdf(String sourceFileName, String signedFileName, String keystoreName, String password) throws Exception;
+     void signPdf(String sourceFileName, String keystoreName, String password) throws Exception;
      void convertImageToPdf(String imagePath) throws IOException;
      void convertImageToPdfWithOCR(String imageFile) throws Exception;
      void mergePdfs(List<String> sourceFileNames, String outputFileName) throws IOException;

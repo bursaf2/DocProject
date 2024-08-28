@@ -33,18 +33,8 @@
 	</properties>
 	<repositories>
 		<repository>
-			<id>com.e-iceblue</id>
-			<name>e-iceblue</name>
-			<url>https://repo.e-iceblue.com/nexus/content/groups/public/</url>
-		</repository>
-		<repository>
 			<id>aspose-maven-repository</id>
 			<url>https://repository.aspose.com/repo/</url>
-		</repository>
-		<repository>
-			<id>AsposeJavaAPI</id>
-			<name>Aspose Java API</name>
-			<url>https://releases.aspose.com/java/repo/</url>
 		</repository>
 	</repositories>
 
@@ -142,6 +132,15 @@
 			<artifactId>itextpdf</artifactId>
 			<version>5.5.13.3</version>
 		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/bouncy-castle-adapter -->
+		<dependency>
+			<groupId>com.itextpdf</groupId>
+			<artifactId>bouncy-castle-adapter</artifactId>
+			<version>8.0.5</version>
+		</dependency>
+
+
 
 
 		<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->

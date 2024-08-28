@@ -2,12 +2,12 @@ package com.example.DocProject.Service;
 
 import com.example.DocProject.model.KeyValuePair;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.util.Units;
 import org.apache.poi.xwpf.usermodel.*;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -18,7 +18,7 @@ public class DocumentService {
 
     ConversionWordPdfService conversionwordpdfservice = new ConversionWordPdfServiceImpl();
 
-    public void processWordTemplate(File templateFile,boolean pdf, JsonNode jsonData) throws IOException {
+    public void processWordTemplate(File templateFile,boolean pdf, JsonNode jsonData) throws IOException, InvalidFormatException {
         // Load the template file into an XWPFDocument
         XWPFDocument document = new XWPFDocument(templateFile.toURI().toURL().openStream());
 
@@ -47,8 +47,33 @@ public class DocumentService {
         }
     }
 
-    private void replacePlaceholders(XWPFDocument document, JsonNode jsonData) {
+    private void replacePlaceholders(XWPFDocument document, JsonNode jsonData) throws IOException, InvalidFormatException {
         List<KeyValuePair> flatJsonData = flattenJson(jsonData, "");
+
+
+        // 1. Adım: Kapak sayfasındaki resmi çıkar ve kaydet
+        List<XWPFPictureData> pictures = document.getAllPictures();
+        if (!pictures.isEmpty()) {
+            XWPFPictureData coverImage = pictures.get(0); // İlk resmi alıyoruz
+            try (FileOutputStream fos = new FileOutputStream("uploads/cover_image.png")) {
+                fos.write(coverImage.getData());
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        // 2. Adım: Kapak sayfasındaki metni işleyin (bu örnekte sadece resmi kaldırıyoruz)
+        for (XWPFParagraph paragraph : document.getParagraphs()) {
+            for (XWPFRun run : paragraph.getRuns()) {
+                run.removeBreak(); // Gereksiz satır sonlarını kaldır
+                if (run.getEmbeddedPictures().size() > 0) {
+                    run.getEmbeddedPictures().clear(); // Resmi kaldır
+                }
+            }
+        }
+
 
         for (XWPFFooter footer : document.getFooterList()) {
 
@@ -85,7 +110,19 @@ public class DocumentService {
                 replaceJsonDataTable(flatJsonData, table);  // if element equals to table
             }
         }
+
+
+
+
+
+        // 3. Adım: Aynı resmi arka plan olarak ekleyin
+        XWPFParagraph newParagraph = document.createParagraph();
+        XWPFRun newRun = newParagraph.createRun();
+        FileInputStream fis = new FileInputStream("uploads/cover_image.png");
+        newRun.addPicture(fis, XWPFDocument.PICTURE_TYPE_PNG, "uploads/cover_image.png", Units.toEMU(595), Units.toEMU(842));
+        fis.close();
     }
+
 
     private void replaceJsonDataParagraph(List<KeyValuePair> flatJsonData, XWPFParagraph paragraph) {
 
@@ -246,7 +283,7 @@ public class DocumentService {
     }
 
     private String replaceExpressions(String text, List<KeyValuePair> flatJsonData) {
-        Pattern exprPattern = Pattern.compile("\\{\\{expr\\((.*?)\\)\\}\\}");
+        Pattern exprPattern = Pattern.compile("\\{\\{expr\\((.*?)\\)}}");
         Matcher matcher = exprPattern.matcher(text);
         while (matcher.find()) {
             String expression = matcher.group(1);

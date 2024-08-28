@@ -65,9 +65,9 @@ public class PdfController {
 
 
     @PostMapping("/sign")
-    public String signPdf(@RequestParam String sourceFileName, @RequestParam String signedFileName, @RequestParam String keystoreName, String password) {
+    public String signPdf(@RequestParam String sourceFileName, @RequestParam String keystoreName, String password) {
         try {
-            pdfService.signPdf(sourceFileName, signedFileName, keystoreName, password);
+            pdfService.signPdf(sourceFileName, keystoreName, password);
             return "PDF signed successfully!";
         } catch (Exception e) {
             e.printStackTrace();

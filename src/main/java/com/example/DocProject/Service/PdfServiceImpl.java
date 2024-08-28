@@ -159,7 +159,7 @@ public class PdfServiceImpl implements PdfService {
     }
 
     @Override
-    public void signPdf(String sourceFileName, String signedFileName, String keystoreName, String password) throws Exception {
+    public void signPdf(String sourceFileName, String keystoreName, String password) throws Exception {
         BouncyCastleProvider provider = new BouncyCastleProvider();
         Security.addProvider(provider);
 
@@ -172,6 +172,7 @@ public class PdfServiceImpl implements PdfService {
         Certificate[] chain = ks.getCertificateChain(alias);
 
         Path srcPath = root.resolve(sourceFileName);
+        String signedFileName = "signed_" + sourceFileName;
         Path destPath = root.resolve(signedFileName);
 
         try (PdfReader reader = new PdfReader(srcPath.toString());
